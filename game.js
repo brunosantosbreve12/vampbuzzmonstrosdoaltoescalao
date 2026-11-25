@@ -34,10 +34,10 @@
     { id: 'johanne', name: 'JOHANNE', h: 96 },
     { id: 'wesley', name: 'WESLEY', h: 100 },
     { id: 'analu', name: 'ANALÚ', h: 84, noArms: true },
-    { id: 'heroi5', name: 'HERÓI 5', h: 86 },
-    { id: 'heroi6', name: 'HERÓI 6', h: 96 },
-    { id: 'heroi7', name: 'HERÓI 7', h: 94 },
-    { id: 'heroi8', name: 'HERÓI 8', h: 96 }
+    { id: 'heroi5', name: 'RAUZINHO', h: 86 },
+    { id: 'heroi6', name: 'JESSICA', h: 96 },
+    { id: 'heroi7', name: 'SUFIA SANDRA', h: 94 },
+    { id: 'heroi8', name: 'FLÁVIA', h: 96 }
   ];
   const DIFFS = [
     { name: 'FÁCIL', spd: 0.8, fire: 0.6, boss: 0.7, count: 0.7, hearts: 2 },
