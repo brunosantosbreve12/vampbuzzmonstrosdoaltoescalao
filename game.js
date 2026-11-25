@@ -26,7 +26,7 @@
   let best = store.get('vb_best', 0);
   let muted = store.get('vb_muted', false);
   let heroIdx = store.get('vb_hero', 0);
-  if (!(heroIdx >= 0 && heroIdx < 8)) heroIdx = 0;
+  if (!(heroIdx >= 0 && heroIdx < 9)) heroIdx = 0;
   let diffIdx = store.get('vb_diff', 1);
 
   const HEROES = [
@@ -37,7 +37,8 @@
     { id: 'heroi5', name: 'RAUZINHO', h: 86 },
     { id: 'heroi6', name: 'JESSICA', h: 96 },
     { id: 'heroi7', name: 'SUFIA SANDRA', h: 94 },
-    { id: 'heroi8', name: 'FLÁVIA', h: 96 }
+    { id: 'heroi8', name: 'FLÁVIA', h: 96 },
+    { id: 'robson', name: 'ROBSON', h: 100, weapon: 'gun' }
   ];
   const DIFFS = [
     { name: 'FÁCIL', spd: 0.8, fire: 0.6, boss: 0.7, count: 0.7, hearts: 2 },
@@ -56,7 +57,7 @@
   // ---------- imagens ----------
   const SRC = {
     bruno: 'assets/bruno.png', johanne: 'assets/johanne.png', wesley: 'assets/wesley.png',
-    analu: 'assets/analu.png', heroi5: 'assets/heroi5.png', heroi6: 'assets/heroi6.png', heroi7: 'assets/heroi7.png', heroi8: 'assets/heroi8.png', vamp: 'assets/vamp.png', buzz: 'assets/buzz.png', logo: 'assets/logo.png'
+    analu: 'assets/analu.png', heroi5: 'assets/heroi5.png', heroi6: 'assets/heroi6.png', heroi7: 'assets/heroi7.png', heroi8: 'assets/heroi8.png', robson: 'assets/robson.png', vamp: 'assets/vamp.png', buzz: 'assets/buzz.png', logo: 'assets/logo.png'
   };
   const IMG = {}, SPR = {};
   function loadImages() {
@@ -255,6 +256,13 @@
     land() { if (!audio()) return; noise(sfxBus, now(), 0.06, 0.07, 'lowpass', 600); },
     drop() { if (!audio()) return; tone(sfxBus, 500, now(), 0.15, 'triangle', 0.1, 180); },
     garlic() { if (!audio()) return; noise(sfxBus, now(), 0.08, 0.12, 'bandpass', 900, 300, 2); tone(sfxBus, 240, now(), 0.1, 'square', 0.06, 120); },
+    gunshot() {
+      if (!audio()) return;
+      noise(sfxBus, now(), 0.16, 0.45, 'highpass', 900, 300);
+      noise(sfxBus, now(), 0.3, 0.3, 'lowpass', 2500, 120);
+      tone(sfxBus, 160, now(), 0.18, 'sine', 0.45, 45);
+      tone(sfxBus, 2400, now(0.08), 0.04, 'square', 0.03); // cápsula caindo
+    },
     coinShot() { if (!audio()) return; tone(sfxBus, 1400, now(), 0.06, 'square', 0.05); tone(sfxBus, 2100, now(0.04), 0.09, 'square', 0.04); },
     hit() { if (!audio()) return; tone(sfxBus, 420, now(), 0.08, 'square', 0.08, 200); noise(sfxBus, now(), 0.05, 0.08, 'highpass', 2000); },
     enemyDie() { if (!audio()) return; noise(sfxBus, now(), 0.25, 0.18, 'lowpass', 3000, 200); tone(sfxBus, 600, now(), 0.25, 'square', 0.07, 80); },
@@ -828,6 +836,15 @@
 
   function shootPlayer() {
     const garlic = L.env === 'vamp';
+    if (hero().weapon === 'gun') {
+      P.shootCd = 0.2; P.recoil = 0.12; P.shootAnim = 0.22;
+      const h0 = heroH(), y0 = P.y - (P.crouch ? h0 * 0.3 : h0 * 0.52);
+      pShots.push({ kind: 'bullet', x: P.x + P.facing * 30, y: y0, vx: P.facing * 950, vy: 0, g: 0, life: 0.8, rot: 0 });
+      for (let i = 0; i < 6; i++) parts.push({ x: P.x + P.facing * 34, y: y0 + rand(-4, 4), vx: P.facing * rand(60, 200), vy: rand(-80, 80), life: 0.12, max: 0.12, size: 5, color: i % 2 ? '#fff6a0' : '#ff9a1f', g: 0 });
+      parts.push({ x: P.x, y: y0, vx: -P.facing * rand(60, 120), vy: -rand(150, 250), life: 0.6, max: 0.6, size: 3, color: C.gold, g: 900 });
+      sfx.gunshot();
+      return;
+    }
     P.shootCd = 0.26; P.recoil = 0.1; P.shootAnim = 0.22;
     const h = heroH();
     const y = P.y - (P.crouch ? h * 0.3 : h * 0.55);
@@ -1281,6 +1298,14 @@
     ctx.fillStyle = C.gold; ctx.fillRect(X + 2 * size, Y + 2 * size, Math.max(2, w - 4 * size), h - 4 * size);
     if (w > 10 * size) { ctx.fillStyle = '#fff3a0'; ctx.fillRect(X + 4 * size, Y + 4 * size, 3 * size, h - 10 * size); }
   }
+  function drawBulletIcon(x, y, s = 1) {
+    ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(s, s);
+    ctx.fillStyle = '#000'; ctx.fillRect(-11, -6, 22, 12);
+    ctx.fillStyle = C.gold; ctx.fillRect(-9, -4, 12, 8);
+    ctx.fillStyle = '#c0c0c0'; ctx.fillRect(3, -4, 4, 8); ctx.fillRect(7, -2, 2, 4);
+    ctx.fillStyle = '#fff3a0'; ctx.fillRect(-8, -3, 8, 2);
+    ctx.restore();
+  }
   function drawGarlic(x, y, rot, s = 1) {
     ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(rot); ctx.scale(s, s);
     ctx.fillStyle = '#000'; ctx.fillRect(-10, -8, 20, 18);
@@ -1687,6 +1712,13 @@
     for (const s of pShots) {
       const x = s.x - camX;
       if (s.kind === 'garlic') drawGarlic(x, s.y, s.rot);
+      else if (s.kind === 'bullet') {
+        const d = Math.sign(s.vx);
+        ctx.fillStyle = 'rgba(255,200,80,0.35)'; ctx.fillRect(Math.round(x - d * 28), Math.round(s.y - 1), 28 * d, 3);
+        ctx.fillStyle = '#000'; ctx.fillRect(Math.round(x - 7), Math.round(s.y - 3), 14, 6);
+        ctx.fillStyle = C.gold; ctx.fillRect(Math.round(x - 6), Math.round(s.y - 2), 12, 4);
+        ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(x + d * 3), Math.round(s.y - 2), 3, 2);
+      }
       else drawCoin(x, s.y, s.rot, 0.8);
     }
     for (const s of eShots) {
@@ -1744,7 +1776,7 @@
     ctx.fillStyle = 'rgba(0,0,0,0.65)'; ctx.fillRect(8, 8, 210, 66);
     ctx.fillStyle = C.purple; ctx.fillRect(8, 8, 210, 3); ctx.fillRect(8, 71, 210, 3);
     for (let i = 0; i < 3; i++) drawHeart(30 + i * 34, 30, 4, i < G.lives ? C.red : '#333');
-    if (L.env === 'vamp') drawGarlic(190, 30, 0, 1.1); else drawCoin(190, 30, time, 0.9);
+    if (hero().weapon === 'gun') drawBulletIcon(190, 30, 1.2); else if (L.env === 'vamp') drawGarlic(190, 30, 0, 1.1); else drawCoin(190, 30, time, 0.9);
     text('FASE ' + (G.phase + 1) + '/6', 18, 58, 10, C.green, 0, 'left');
     const pw = 52;
     PAUSE_BTN.x = W - pw - 8; PAUSE_BTN.y = 8;
@@ -1811,7 +1843,7 @@
         for (let i = 0; i < s; i += 4) ctx.fillRect(Math.round(b.x - (s - i)), Math.round(b.y - d * s / 2 + d * i), (s - i) * 2, 4);
         text(b.icon === 'jump' ? 'PULAR' : 'DESCER', b.x, b.y + b.r * 0.6, 7, '#fff');
       } else {
-        if (L.env === 'vamp') drawGarlic(b.x, b.y - 4, 0, 1.6); else drawCoin(b.x, b.y - 4, time, 1.2);
+        if (hero().weapon === 'gun') drawBulletIcon(b.x, b.y - 4, 1.8); else if (L.env === 'vamp') drawGarlic(b.x, b.y - 4, 0, 1.6); else drawCoin(b.x, b.y - 4, time, 1.2);
         text('ATIRAR', b.x, b.y + b.r * 0.62, 7, '#fff');
       }
     }
@@ -1865,12 +1897,13 @@
     text('ESCOLHA SEU HERÓI', W / 2, y, portrait ? 13 : 11, C.green, 4);
     y += portrait ? 22 : 14;
     const gap = portrait ? 10 : 8;
-    const perRow = portrait ? 4 : 8, rows = Math.ceil(HEROES.length / perRow);
-    const cw = Math.min(portrait ? 120 : 112, (W - 24 - gap * (perRow - 1)) / perRow);
+    const perRow = portrait ? 5 : HEROES.length, rows = Math.ceil(HEROES.length / perRow);
+    const cw = Math.min(portrait ? 120 : 108, (W - 24 - gap * (perRow - 1)) / perRow);
     const ch = portrait ? Math.min(175, cw * 1.55) : Math.min(150, H * 0.28);
-    const cx0 = W / 2 - (cw * perRow + gap * (perRow - 1)) / 2;
     const y0 = y;
     HEROES.forEach((hh, i) => {
+      const row = Math.floor(i / perRow), inRow = Math.min(perRow, HEROES.length - row * perRow);
+      const cx0 = W / 2 - (cw * inRow + gap * (inRow - 1)) / 2;
       const x = cx0 + (i % perRow) * (cw + gap), sel = i === heroIdx;
       y = y0 + Math.floor(i / perRow) * (ch + gap + 6);
       const lift = sel ? Math.round(Math.abs(Math.sin(time * 4)) * -6) : 0;
@@ -1945,7 +1978,7 @@
     const lines = wrap(nm, W - 60, 16);
     lines.forEach((l, i) => text(l, W / 2 - (1 - k) * -W, H / 2 + i * 26, 16, '#fff', 6));
     if (L.boss && Math.floor(time * 4) % 2) text('!! CHEFÃO: ' + (L.boss.kind === 'vamp' ? 'VAMP' : 'BUZZ') + ' !!', W / 2, H / 2 + 66, fitSize('!! CHEFÃO: VAMP !!', W - 40, 16), C.red, 6);
-    else if (!L.boss) text(L.env === 'vamp' ? 'ARMA: ALHO' : 'ARMA: MOEDAS DE OURO', W / 2, H / 2 + 66, 11, C.gold, 4);
+    else if (!L.boss) text(hero().weapon === 'gun' ? 'ARMA: TIROS' : L.env === 'vamp' ? 'ARMA: ALHO' : 'ARMA: MOEDAS DE OURO', W / 2, H / 2 + 66, 11, C.gold, 4);
     ctx.globalAlpha = 1;
   }
   function drawClear() {
